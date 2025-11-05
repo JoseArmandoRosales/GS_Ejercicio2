@@ -2,6 +2,7 @@ package com.gruposalinas.prueba_armando.exception;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
@@ -10,6 +11,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import java.time.LocalDateTime;
+import java.time.format.DateTimeParseException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -89,6 +91,63 @@ public class GlobalExceptionHandler {
             LocalDateTime.now()
         );
         return new ResponseEntity<>(error, HttpStatus.BAD_REQUEST);
+    }
+
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<ErrorResponse> handleHttpMessageNotReadableException(HttpMessageNotReadableException ex) {
+        String message = "Error en el formato de los datos enviados";
+        Throwable rootCause = ex.getRootCause();
+        
+        if (rootCause != null) {
+            String rootCauseMessage = rootCause.getMessage();
+            
+            // Detectar errores de formato de fecha
+            if (rootCause instanceof DateTimeParseException || 
+                (rootCauseMessage != null && rootCauseMessage.contains("LocalDate"))) {
+                
+                // Extraer la fecha inválida del mensaje si es posible
+                String fechaInvalida = extraerFechaInvalida(rootCauseMessage);
+                if (fechaInvalida != null) {
+                    message = String.format("Formato de fecha inválido: '%s'. El formato esperado es YYYY-MM-DD (ejemplo: 2025-11-05)", 
+                        fechaInvalida);
+                } else {
+                    message = "Formato de fecha inválido. El formato esperado es YYYY-MM-DD (ejemplo: 2025-11-05)";
+                }
+            } 
+            // Detectar otros errores de JSON
+            else if (rootCauseMessage != null && rootCauseMessage.contains("JSON")) {
+                message = "Error en el formato JSON. Verifica que el JSON sea válido.";
+            }
+            // Otros errores de deserialización
+            else if (rootCauseMessage != null) {
+                message = String.format("Error al procesar los datos: %s", 
+                    rootCauseMessage.length() > 100 ? rootCauseMessage.substring(0, 100) + "..." : rootCauseMessage);
+            }
+        }
+        
+        ErrorResponse error = new ErrorResponse(
+            HttpStatus.BAD_REQUEST.value(),
+            message,
+            LocalDateTime.now()
+        );
+        return new ResponseEntity<>(error, HttpStatus.BAD_REQUEST);
+    }
+
+    private String extraerFechaInvalida(String message) {
+        if (message == null) {
+            return null;
+        }
+        
+        // Buscar patrones como "2030-06-32" o fechas entre comillas
+        java.util.regex.Pattern pattern = java.util.regex.Pattern.compile("['\"]?\\d{4}-\\d{2}-\\d{2,3}['\"]?");
+        java.util.regex.Matcher matcher = pattern.matcher(message);
+        if (matcher.find()) {
+            String fecha = matcher.group();
+            // Limpiar comillas si existen
+            return fecha.replaceAll("['\"]", "");
+        }
+        
+        return null;
     }
 
     @ExceptionHandler(Exception.class)

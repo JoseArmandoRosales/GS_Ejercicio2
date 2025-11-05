@@ -105,23 +105,13 @@ Desarrollar una aplicación basada en microservicios usando Java, que implemente
    docker-compose ps
    ```
 
-4. **Ver los logs de la aplicación:**
-   ```bash
-   docker-compose logs -f prospectos-app
-   ```
-
-5. **Ver los logs de Oracle:**
-   ```bash
-   docker-compose logs -f oracle-db
-   ```
-
 ### Inicialización de la Base de Datos
 
 **Nota:** Oracle Express no ejecuta automáticamente scripts de inicialización como otras bases de datos. Debes inicializar manualmente.
 
 **Importante:** El proyecto incluye datos de prueba que se cargan automáticamente cuando se usa H2 o cuando se ejecuta el script de inicialización. Estos datos incluyen 6 prospectos de ejemplo con sus empleos y domicilios, incluyendo algunos que trabajaron en "Grupo Salinas" y otros con ingresos superiores a $10,000.
 
-#### Opción 1: Usar el script de inicialización (recomendado)
+#### Usar el script de inicialización
 
 1. **Esperar a que Oracle esté completamente iniciado:**
    ```bash
@@ -232,7 +222,7 @@ GS_Ejercicio2/
 │   │   │       ├── application.properties
 │   │   │       ├── schema.sql
 │   │   │       └── init-db.sql
-│   │   └── test/                        # Tests
+│   │   └── test/
 │   ├── pom.xml
 │   └── Dockerfile
 ├── docker-compose.yml
